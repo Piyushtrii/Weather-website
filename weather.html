@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather Forecast</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: rgb(9, 193, 255);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      color: #fff;
+    }
+
+    .container {
+      background: rgba(197, 37, 233, 0.5);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(15, 14, 14, 0.2);
+      text-align: center;
+      width: 600px;
+      max-width: 100%;
+      position: relative;
+      color: #fff;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    .search-box {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .search-box input {
+      padding: 15px;
+      width: 60%;
+      border: 2px solid #ccc;
+      border-radius: 30px;
+      outline: none;
+      transition: border-color 0.3s;
+      margin-right: 10px;
+      color: #333;
+    }
+
+    .search-box input:focus {
+      border-color: #4A90E2;
+    }
+
+    .search-box button {
+      padding: 15px 25px;
+      border: none;
+      background: #4A90E2;
+      color: #fff;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .search-box button:hover {
+      background: #357ABD;
+    }
+
+    .weather-result {
+      display: none;
+      margin-top: 20px;
+      animation: fadeInUp 1s ease-in-out forwards;
+    }
+
+    .weather-result h2 {
+      margin: 20px 0 10px;
+      font-size: 2rem;
+      color: #fff;
+    }
+
+    .weather-result p {
+      margin: 5px 0;
+      font-size: 1.2rem;
+      color: #fff;
+    }
+
+    .weather-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+    }
+
+    .loading {
+      display: none;
+      font-size: 1.5rem;
+      margin-top: 20px;
+      color: #4A90E2;
+    }
+
+    .error {
+      display: none;
+      color: #ff4c4c;
+      margin-top: 20px;
+      font-size: 1.2rem;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .hourly-forecast {
+      display: none;
+      animation: fadeIn 1s ease-in-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="animate__animated animate__bounceInDown">DynamicWeather: Explore Your City's Weather Adventures</h1>
+    <div class="search-box animate__animated animate__fadeInUp">
+      <input type="text" id="city" placeholder="Enter city name">
+      <button id="search">Get Weather</button>
+    </div>
+    <div class="loading">Loading...</div>
+    <div class="error"></div>
+    <div class="weather-result">
+      <i class="weather-icon animate__animated animate__fadeInLeft" id="weather-icon"></i>
+      <h2 id="city-name"></h2>
+      <p id="temperature"></p>
+      <p id="description"></p>
+      <p id="humidity"></p>
+      <p id="wind"></p>
+    </div>
+    <div class="hourly-forecast">
+      <h3>Hourly Forecast:</h3>
+      <ul id="hourly-forecast-list"></ul>
+    </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const searchButton = document.getElementById('search');
+      const cityInput = document.getElementById('city');
+      const weatherResult = document.querySelector('.weather-result');
+      const loading = document.querySelector('.loading');
+      const errorDiv = document.querySelector('.error');
+
+      searchButton.addEventListener('click', function() {
+        const city = cityInput.value.trim();
+        const apiKey = '1467064685fa5bfa2c6cf3d9d5f32477'; // Replace with your actual OpenWeatherMap API key
+        const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+
+        if (!city) {
+          showError('Please enter a city name.');
+          return;
+        }
+
+        loading.style.display = 'block';
+        weatherResult.style.display = 'none';
+        errorDiv.style.display = 'none';
+
+        fetch(apiUrl)
+          .then(response => {
+            loading.style.display = 'none';
+            if (!response.ok) {
+              throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.cod === 200) {
+              displayWeather(data);
+            } else {
+              showError('City not found. Please enter a valid city name.');
+            }
+          })
+          .catch(error => {
+            loading.style.display = 'none';
+            showError('Could not retrieve weather data. Please try again.');
+          });
+      });
+
+      function displayWeather(data) {
+        document.getElementById('city-name').innerText = data.name;
+        document.getElementById('temperature').innerText = `Temperature: ${data.main.temp}°C`;
+        document.getElementById('description').innerText = `Description: ${data.weather[0].description}`;
+        document.getElementById('humidity').innerText = `Humidity: ${data.main.humidity}%`;
+        document.getElementById('wind').innerText = `Wind Speed: ${data.wind.speed} m/s`;
+        
+        const weatherIcon = document.getElementById('weather-icon');
+        const weatherMain = data.weather[0].main.toLowerCase();
+        weatherIcon.className = 'weather-icon';
+        switch(weatherMain) {
+          case 'clear':
+            weatherIcon.classList.add('fas', 'fa-sun');
+            break;
+          case 'clouds':
+            weatherIcon.classList.add('fas', 'fa-cloud');
+            break;
+          case 'rain':
+            weatherIcon.classList.add('fas', 'fa-cloud-showers-heavy');
+            break;
+          case 'snow':
+            weatherIcon.classList.add('fas', 'fa-snowflake');
+            break;
+          case 'thunderstorm':
+            weatherIcon.classList.add('fas', 'fa-bolt');
+            break;
+          default:
+            weatherIcon.classList.add('fas', 'fa-smog');
+        }
+
+        weatherResult.style.display = 'block';
+      }
+
+      function showError(message) {
+        errorDiv.innerText = message;
+        errorDiv.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
